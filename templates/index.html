@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Sales Agent</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+        .message {
+            max-width: 80%;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 1rem;
+        }
+        .user-message {
+            background-color: #E3F2FD;
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .bot-message {
+            background-color: #F5F5F5;
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem;
+        }
+        .suggestion {
+            display: inline-block;
+            margin: 0.25rem;
+            padding: 0.5rem 1rem;
+            background-color: #E3F2FD;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .suggestion:hover {
+            background-color: #BBDEFB;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="flex-shrink-0 flex items-center">
+                            <h1 class="text-xl font-bold text-gray-800">SaaS Sales Agent</h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="bg-white shadow rounded-lg">
+                <div class="p-4">
+                    <div id="chat-messages" class="chat-container overflow-y-auto mb-4">
+                        <div class="message bot-message">
+                            Hello! I'm your SaaS Sales Assistant. I can help you with information about our products (Libera and RTMNxt) and industries. What would you like to know?
+                        </div>
+                    </div>
+                    
+                    <div id="suggestions" class="mb-4">
+                        <div class="suggestion" onclick="sendMessage(this.textContent)">Tell me about Libera</div>
+                        <div class="suggestion" onclick="sendMessage(this.textContent)">What is RTMNxt?</div>
+                        <div class="suggestion" onclick="sendMessage(this.textContent)">Which industries do you serve?</div>
+                    </div>
+                    
+                    <div class="flex">
+                        <input type="text" id="user-input" 
+                               class="flex-1 border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Type your question here...">
+                        <button onclick="sendMessage()" 
+                                class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function addMessage(message, isUser = false) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.textContent = message;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addSuggestions(suggestions) {
+            const suggestionsDiv = document.getElementById('suggestions');
+            suggestionsDiv.innerHTML = '';
+            suggestions.forEach(suggestion => {
+                const div = document.createElement('div');
+                div.className = 'suggestion';
+                div.textContent = suggestion;
+                div.onclick = () => sendMessage(suggestion);
+                suggestionsDiv.appendChild(div);
+            });
+        }
+
+        function sendMessage(message = null) {
+            const userInput = document.getElementById('user-input');
+            const question = message || userInput.value.trim();
+            
+            if (!question) return;
+            
+            addMessage(question, true);
+            userInput.value = '';
+            
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(data.answer);
+                addSuggestions(data.suggestions);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage('Sorry, I encountered an error. Please try again.');
+            });
+        }
+
+        // Handle Enter key
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html> 
